@@ -5,15 +5,6 @@ import numpy as np
 import cv2
 
 
-
-def scheduler(epoch):
-  if epoch < 25:
-    return 1e-3
-  else:
-    return 1e-4
-
-
-
 class Model:
     def __init__(self, class_num, input_size):
         self.class_num = class_num
@@ -22,7 +13,7 @@ class Model:
         self.idx_tensor = np.array(self.idx_tensor, dtype=np.float32)
         self.model = self.__create_model()
         
-    def __loss_angle(self, y_true, y_pred, alpha=1.0):
+    def __loss_angle(self, y_true, y_pred, alpha=0.01):
         # cross entropy loss
         bin_true = y_true[:,0]
         cont_true = y_true[:,1]
@@ -32,7 +23,8 @@ class Model:
         cls_loss = K.losses.categorical_crossentropy(one_hot, sm_pred)
         # MSE loss
         pred_cont = K.backend.sum(sm_pred * self.idx_tensor, 1) * 3 - 99
-        mse_loss = K.losses.MSE(cont_true, pred_cont)
+        pred_cont = tf.reduce_sum(sm_pred * self.idx_tensor, 1) * 3 - 99
+        mse_loss = K.losses.mean_squared_error(cont_true, pred_cont)
         # Total loss
         # mse_loss = 0
         total_loss = cls_loss + alpha * mse_loss
@@ -74,24 +66,14 @@ class Model:
         }
         
         self.model.compile(optimizer=K.optimizers.Adam(lr=lr), loss=losses)
-
         self.model.summary()
-        reducer = K.callbacks.LearningRateScheduler(scheduler, verbose=1)
         self.model.fit(x=train_dataset.data_generator(),
                        validation_data=val_dataset.data_generator(),
                        epochs=max_epoches,
-                       callbacks=[reducer, ],
+                       callbacks=None,
                        steps_per_epoch=train_dataset.epoch_steps,
                        validation_steps=val_dataset.epoch_steps,
                        verbose=1)
-
-        # self.model.fit_generator(generator=train_dataset.data_generator(),
-        #                             epochs=max_epoches,
-        #                             steps_per_epoch=train_dataset.epoch_steps,
-        #                             max_queue_size=10,
-        #                             workers=1,
-        #                             verbose=1)
-
         self.model.save(model_path)
 
     def load(self, path):
