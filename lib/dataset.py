@@ -90,8 +90,9 @@ class AFLW2000:
 
         while True:
             if shuffle:
-                idx = np.random.permutation(range(file_num))
-                self.data_list = np.array(self.data_list)[idx]
+                np.random.shuffle(self.data_list)
+                # idx = np.random.permutation(range(file_num))
+                # self.data_list = np.array(self.data_list)[idx]
             max_num = file_num - (file_num % self.batch_size)
             for i in range(0, max_num, self.batch_size):
                 batch_x = []

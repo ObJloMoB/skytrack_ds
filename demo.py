@@ -8,9 +8,13 @@ from math import cos, sin
 
 def extend_crop(bbox, scale=1.5):
     cy, cx = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
-    new_h, new_w = (bbox[2] - bbox[0])*scale, (bbox[3] - bbox[1])*scale
+    new_h, new_w = (bbox[2] - bbox[0])*scale, (bbox[1] - bbox[3])*scale
+    print(new_h, new_w)
+    new_h = min([new_h, new_w])
+    new_w = new_h
+    print(new_h, new_w)
     new_bbox = np.array([cy - new_h/2, cx - new_w/2, cy + new_h/2, cx + new_w/2], dtype=np.int32)
-
+    print(new_bbox)
 
     return new_bbox
 
@@ -32,8 +36,7 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
     x1 = size * (cos(yaw) * cos(roll)) + tdx
     y1 = size * (cos(pitch) * sin(roll) + cos(roll) * sin(pitch) * sin(yaw)) + tdy
 
-    # Y-Axis | drawn in green
-    #        v
+    # Y-Axis pointing down drawn in green
     x2 = size * (-cos(yaw) * sin(roll)) + tdx
     y2 = size * (cos(pitch) * cos(roll) - sin(pitch) * sin(yaw) * sin(roll)) + tdy
 
@@ -52,7 +55,7 @@ def main(opts):
     # replace with imutils
     cap = cv2.VideoCapture(opts.input)
 
-    model = Model(66, 64)
+    model = Model(66, opts.size)
     model.load(opts.weights)
 
     while True:
@@ -65,11 +68,12 @@ def main(opts):
             # crop = img[top:bottom, left:right]
             # cv2.imshow('crop', crop)
 
-            top, right, bottom, left = extend_crop([top, right, bottom, left])
+            top, left, bottom, right = extend_crop([top, right, bottom, left])
             crop = img[top:bottom, left:right]
             cv2.imshow('new_crop', crop)
 
-            crop = cv2.resize(crop, (64, 64))
+            crop = cv2.resize(crop, (224, 224))
+            cv2.imshow('resize', crop)
             input_img = np.asarray(crop, dtype=np.float32)
             normed_img = (input_img - [0.5, 0.5, 0.5]) / [0.25, 0.25, 0.25]
             normed_img = np.expand_dims(normed_img, 0)
@@ -91,11 +95,9 @@ if __name__ == '__main__':
     parser.add_argument('--input', help='input resiurce',
                         required=True, type=str)
     parser.add_argument('--weights', help='chkpt',
-                        default='model_size64_e30_lr1.0E-03.h5', type=str)
-    # parser.add_argument('--size', help='Input image size',
-    #                     default=224, type=int)
-    # parser.add_argument('--force_cpu', help='Use only cpu',
-    #                     action="store_true")
+                        default='model_size224_e50_lr1.0E-03.h5', type=str)
+    parser.add_argument('--size', help='Input image size',
+                        default=224, type=int)
 
 
     args = parser.parse_args()
