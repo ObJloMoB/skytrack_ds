@@ -84,8 +84,8 @@ class AFLW2000:
         # WHY -1 ?????//
         bin_labels = np.digitize([yaw, pitch, roll], bins) - 1
 
-        # print('YPR LABELS')
-        # print(bin_labels, cont_labels)
+        print('YPR LABELS')
+        print(bin_labels, cont_labels)
         
         return bin_labels, cont_labels
         
