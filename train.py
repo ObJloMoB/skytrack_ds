@@ -25,6 +25,8 @@ def main(opts):
     model.model.summary()
 
     train_list, val_list = split(opts.data)
+    print()
+    print()
     print(len(train_list))
 
     train_dataset = AFLW2000(train_list, batch_size=opts.bs, input_size=opts.size)
