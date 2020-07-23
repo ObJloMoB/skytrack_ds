@@ -7,8 +7,13 @@ import os
 
 
 def split(data_dir, val_split=0.2):
-    all_files = os.listdir(data_dir)
-    images = [os.path.join(data_dir, x) for x in all_files if x.endswith('.jpg')]
+    images = []
+    for root, dirs, files in os.walk(data_dir):
+        for file in files:
+            if file.endswith('.jpg'):
+                images.append(os.path.join(root, file))
+
+    # images = [os.path.join(data_dir, x) for x in all_files if x.endswith('.jpg')]
     np.random.seed(322)
     np.random.shuffle(images)
     split_idx = int(len(images)*val_split)
@@ -20,6 +25,7 @@ def main(opts):
     model.model.summary()
 
     train_list, val_list = split(opts.data)
+    print(len(train_list))
 
     train_dataset = AFLW2000(train_list, batch_size=opts.bs, input_size=opts.size)
     val_dataset = AFLW2000(val_list, batch_size=1, input_size=opts.size)
