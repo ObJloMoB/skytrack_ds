@@ -16,32 +16,32 @@ def split(data_dir, val_split=0.2):
 
 
 def main(opts):
-    model = Model(66, 64)
+    model = Model(66, opts.size)
     model.model.summary()
 
     train_list, val_list = split(opts.data)
 
-    train_dataset = AFLW2000(train_list)
-    val_dataset = AFLW2000(val_list)
+    train_dataset = AFLW2000(train_list, batch_size=opts.bs, input_size=opts.size)
+    val_dataset = AFLW2000(val_list, batch_size=1, input_size=opts.size)
 
-    model.train('m.h5', train_dataset, val_dataset)
-
-
+    chkpt_name = f'model_size{opts.size}_e{opts.epoch}_lr{opts.lr:.01E}.h5'
+    model.train(chkpt_name, train_dataset, val_dataset, opts.epoch)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', help='input data',
-                        required=True, type=str)
-    # parser.add_argument('--output', help='save to fld',
-    #                     required=True, type=str)
-    # parser.add_argument('--weights', help='DATA',
-    #                     default='weights/checkpoint.pth', type=str)
-    # parser.add_argument('--size', help='Input image size',
-    #                     default=224, type=int)
-    # parser.add_argument('--force_cpu', help='Use only cpu',
-    #                     action="store_true")
-
+    parser.add_argument('--data', help='DATA',
+                        type=str, required=True)
+    parser.add_argument('--lr', help='LR',
+                        default=1e-3, type=float)
+    parser.add_argument('--size', help='Input image size',
+                        default=224, type=int)
+    parser.add_argument('--epoch', help='Train duration',
+                        default=30, type=int)
+    parser.add_argument('--bs', help='BS',
+                        default=64, type=int)
+    parser.add_argument('--output', help='Save every N epoch',
+                        default='.', type=str)
 
     args = parser.parse_args()
     main(args)
