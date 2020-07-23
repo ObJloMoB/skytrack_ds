@@ -28,7 +28,7 @@ def main(opts):
     print(len(train_list))
 
     train_dataset = AFLW2000(train_list, batch_size=opts.bs, input_size=opts.size)
-    val_dataset = AFLW2000(val_list, batch_size=1, input_size=opts.size)
+    val_dataset = AFLW2000(val_list, batch_size=opts.bs, input_size=opts.size)
 
     chkpt_name = f'model_size{opts.size}_e{opts.epoch}_lr{opts.lr:.01E}.h5'
     model.train(chkpt_name, train_dataset, val_dataset, opts.epoch)
