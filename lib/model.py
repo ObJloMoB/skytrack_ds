@@ -29,26 +29,50 @@ class Model:
         total_loss = cls_loss + alpha * mse_loss
         return total_loss
 
+    def __res_block(self, in_depth, x):
+        feature = K.layers.Conv2D(filters=in_depth, kernel_size=(3, 3),padding='same', activation=None)(x)
+        feature = K.layers.BatchNormalization()(feature)
+        feature = K.layers.Activation('relu')(feature)
+        
+        shortcut = K.layers.Conv2D(filters=in_depth, kernel_size=(1, 1), activation=None)(x)
+        shortcut = K.layers.BatchNormalization()(shortcut)
+        shortcut = K.layers.Activation('relu')(shortcut)
+        feature = K.layers.add([shortcut, feature])
+        return feature
+
     def __create_model(self):
         inputs = tf.keras.layers.Input(shape=(self.input_size, self.input_size, 3))
-        
-        feature = K.layers.Conv2D(filters=64, kernel_size=(11, 11), strides=4, padding='same', activation=tf.nn.relu)(inputs)
-        feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
-        feature = K.layers.Conv2D(filters=192, kernel_size=(5, 5), padding='same', activation=tf.nn.relu)(feature)
-        feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
-        feature = K.layers.Conv2D(filters=384, kernel_size=(3, 3), padding='same', activation=tf.nn.relu)(feature)
-        feature = K.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation=tf.nn.relu)(feature)
-        feature = K.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation=tf.nn.relu)(feature)
-        feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
+
+        feature = K.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=2, padding='same', activation=K.activations.relu)(inputs)
+        feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
+        feature = self.__res_block(64, feature)
+        feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
+        feature = self.__res_block(128, feature)
+        feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
+        feature = self.__res_block(256, feature)
+        feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
+        feature = self.__res_block(512, feature)
+        feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
+
+        # Original
+        # feature = K.layers.Conv2D(filters=64, kernel_size=(11, 11), strides=4, padding='same', activation=K.activations.relu)(inputs)
+        # feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
+        # feature = K.layers.Conv2D(filters=192, kernel_size=(5, 5), padding='same', activation=K.activations.relu)(feature)
+        # feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
+        # feature = K.layers.Conv2D(filters=384, kernel_size=(3, 3), padding='same', activation=K.activations.relu)(feature)
+        # feature = K.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation=K.activations.relu)(feature)
+        # feature = K.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation=K.activations.relu)(feature)
+        # feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
+
         feature = K.layers.Flatten()(feature)
         feature = K.layers.Dropout(0.5)(feature)
         feature = K.layers.Dense(units=4096, activation=tf.nn.relu)(feature)
         
-        fc_yaw = tf.keras.layers.Dense(name='yaw', units=self.class_num)(feature)
-        fc_pitch = tf.keras.layers.Dense(name='pitch', units=self.class_num)(feature)
-        fc_roll = tf.keras.layers.Dense(name='roll', units=self.class_num)(feature)
+        fc_yaw = K.layers.Dense(name='yaw', units=self.class_num)(feature)
+        fc_pitch = K.layers.Dense(name='pitch', units=self.class_num)(feature)
+        fc_roll = K.layers.Dense(name='roll', units=self.class_num)(feature)
     
-        model = tf.keras.Model(inputs=inputs, outputs=[fc_yaw, fc_pitch, fc_roll])
+        model = K.Model(inputs=inputs, outputs=[fc_yaw, fc_pitch, fc_roll])
         
         return model
 
