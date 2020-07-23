@@ -6,7 +6,7 @@ from lib.model import Model
 from math import cos, sin
 
 
-def extend_crop(bbox, scale=1.5):
+def extend_crop(bbox, scale=2.0):
     cy, cx = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
     new_h, new_w = (bbox[2] - bbox[0])*scale, (bbox[1] - bbox[3])*scale
     print(new_h, new_w)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     parser.add_argument('--input', help='input resiurce',
                         required=True, type=str)
     parser.add_argument('--weights', help='chkpt',
-                        default='model_size224_e50_lr1.0E-03.h5', type=str)
+                        default='model_size224_e30_lr1.0E-05.h5', type=str)
     parser.add_argument('--size', help='Input image size',
                         default=224, type=int)
 

@@ -13,7 +13,6 @@ def split(data_dir, val_split=0.2):
             if file.endswith('.jpg'):
                 images.append(os.path.join(root, file))
 
-    # images = [os.path.join(data_dir, x) for x in all_files if x.endswith('.jpg')]
     np.random.seed(322)
     np.random.shuffle(images)
     split_idx = int(len(images)*val_split)
@@ -25,11 +24,8 @@ def main(opts):
     model.model.summary()
 
     train_list, val_list = split(opts.data)
-    print()
-    print()
-    print(len(train_list))
 
-    train_dataset = AFLW2000(train_list, batch_size=opts.bs, input_size=opts.size)
+    train_dataset = AFLW2000(train_list, augment=True, batch_size=opts.bs, input_size=opts.size)
     val_dataset = AFLW2000(val_list, batch_size=opts.bs, input_size=opts.size)
 
     chkpt_name = f'model_size{opts.size}_e{opts.epoch}_lr{opts.lr:.01E}.h5'
