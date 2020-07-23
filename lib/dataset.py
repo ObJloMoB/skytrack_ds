@@ -9,6 +9,8 @@ class AFLW2000:
     def __init__(self, data_list, batch_size=16, input_size=64):
         self.data_list = data_list
         self.batch_size = batch_size
+        self.epoch_steps = len(data_list) // batch_size
+        print(self.epoch_steps)
         self.input_size = input_size
         self.norm_params = {'mean': np.array([0.5, 0.5, 0.5]),
                             'std':  np.array([0.25, 0.25, 0.25])}
@@ -72,8 +74,8 @@ class AFLW2000:
         pose = self.__get_ypr_from_mat(file_name)
         
         # And convert to degrees.
-        yaw = pose[1] * 180.0 / np.pi
         pitch = pose[0] * 180.0 / np.pi
+        yaw = pose[1] * 180.0 / np.pi
         roll = pose[2] * 180.0 / np.pi
         
         cont_labels = [yaw, pitch, roll]
