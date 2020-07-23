@@ -13,7 +13,7 @@ class Model:
         self.idx_tensor = np.array(self.idx_tensor, dtype=np.float32)
         self.model = self.__create_model()
         
-    def __loss_angle(self, y_true, y_pred, alpha=0.01):
+    def __loss_angle(self, y_true, y_pred, alpha=1.0):
         # cross entropy loss
         bin_true = y_true[:,0]
         cont_true = y_true[:,1]
@@ -23,7 +23,6 @@ class Model:
         cls_loss = K.losses.categorical_crossentropy(one_hot, sm_pred)
         # MSE loss
         pred_cont = K.backend.sum(sm_pred * self.idx_tensor, 1) * 3 - 99
-        pred_cont = tf.reduce_sum(sm_pred * self.idx_tensor, 1) * 3 - 99
         mse_loss = K.losses.mean_squared_error(cont_true, pred_cont)
         # Total loss
         # mse_loss = 0
