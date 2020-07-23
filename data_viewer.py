@@ -42,7 +42,7 @@ def main(opts):
     train_list, val_list = split(opts.data)
     train_dataset = AFLW2000(train_list, batch_size=1, input_size=opts.size)
 
-    max_show = 1600
+    max_show = 10
     for idx, (x, y) in enumerate(train_dataset.data_generator()):
         print(idx, y)
         print(len(y))

@@ -6,11 +6,11 @@ import random
 
 
 class AFLW2000:
-    def __init__(self, data_list, batch_size=16, input_size=64):
+    def __init__(self, data_list, augment=False, batch_size=16, input_size=64):
         self.data_list = data_list
         self.batch_size = batch_size
         self.epoch_steps = len(data_list) // batch_size
-        print(self.epoch_steps)
+        self.augment = augment
         self.input_size = input_size
         self.norm_params = {'mean': np.array([0.5, 0.5, 0.5]),
                             'std':  np.array([0.25, 0.25, 0.25])}
@@ -28,7 +28,7 @@ class AFLW2000:
         return pt2d
     # END REWORK 
     
-    def __get_input_img(self, file_name):
+    def __get_input_data(self, file_name):
         img = cv2.imread(file_name)
         pt2d = self.__get_pt2d_from_mat(file_name.replace('jpg', 'mat'))
         
@@ -63,11 +63,39 @@ class AFLW2000:
             y_max = img.shape[0]
         
         crop_img = img[int(y_min):int(y_max), int(x_min):int(x_max)]
+
+
+        # We get the pose in radians
+        pose = self.__get_ypr_from_mat(file_name.replace('jpg', 'mat'))
         
+        # And convert to degrees.
+        pitch = pose[0] * 180.0 / np.pi
+        yaw = pose[1] * 180.0 / np.pi
+        roll = pose[2] * 180.0 / np.pi
+        
+        if self.augment:
+            # Flip?
+            rnd = np.random.random_sample()
+            if rnd < 0.5:
+                yaw = -yaw
+                roll = -roll
+                crop_img = cv2.flip(crop_img, 1)
+
+            # # Blur?
+            rnd = np.random.random_sample()
+            if rnd < 0.05:
+                kernel = np.ones((5,5),np.float32)/25
+                crop_img = cv2.filter2D(crop_img,-1,kernel)
+        
+        cont_labels = [yaw, pitch, roll]
+        
+        bins = np.array(range(-99, 99, 3))
+        bin_labels = np.digitize([yaw, pitch, roll], bins) - 1
+
         crop_img = np.asarray(cv2.resize(crop_img, (self.input_size, self.input_size))) / 255.0
         normed_img = (crop_img - self.norm_params['mean']) / self.norm_params['std']
 
-        return normed_img
+        return normed_img, bin_labels, cont_labels
 
     def __get_input_label(self, file_name):
         # We get the pose in radians
@@ -100,9 +128,7 @@ class AFLW2000:
                 batch_pitch = []
                 batch_roll = []
                 for j in range(self.batch_size):
-                    img = self.__get_input_img(self.data_list[i + j])
-                    bin_labels, cont_labels = self.__get_input_label(self.data_list[i + j].replace('jpg', 'mat'))
-
+                    img, bin_labels, cont_labels = self.__get_input_data(self.data_list[i + j])
                     batch_x.append(img)
                     batch_yaw.append([bin_labels[0], cont_labels[0]])
                     batch_pitch.append([bin_labels[1], cont_labels[1]])
