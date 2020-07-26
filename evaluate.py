@@ -19,12 +19,12 @@ def main(opts):
 
     yaw_err, pitch_err, roll_err = [], [], []
     for idx, (x, y) in enumerate(val_dataset.data_generator()):
-        print(idx)
+        print(f'{idx}/{val_dataset.epoch_steps}')
 
         res = model.test_online(x)
         yaw, pitch, roll = y[0][0][1], y[1][0][1], y[2][0][1]
-        print(yaw, pitch, roll)
-        print(res)
+        # print(yaw, pitch, roll)
+        # print(res)
         yaw_err.append(abs(yaw-res[0]))
         pitch_err.append(abs(pitch-res[1]))
         roll_err.append(abs(roll-res[2]))
@@ -36,9 +36,9 @@ def main(opts):
         # cv2.imshow('img', img)
         # cv2.waitKey(0)
 
-        print(f'YAW: {np.mean(yaw_err)}')
-        print(f'PITCH: {np.mean(pitch_err)}')
-        print(f'ROLL: {np.mean(roll_err)}')
+        # print(f'YAW: {np.mean(yaw_err)}')
+        # print(f'PITCH: {np.mean(pitch_err)}')
+        # print(f'ROLL: {np.mean(roll_err)}')
 
         if idx == val_dataset.epoch_steps:
             break

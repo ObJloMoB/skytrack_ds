@@ -13,7 +13,7 @@ class Model:
         self.idx_tensor = np.array(self.idx_tensor, dtype=np.float32)
         self.model = self.__create_model()
         
-    def __loss_angle(self, y_true, y_pred, alpha=1.0):
+    def __loss_angle(self, y_true, y_pred, alpha=2.0):
         # cross entropy loss
         bin_true = y_true[:,0]
         cont_true = y_true[:,1]
@@ -29,30 +29,41 @@ class Model:
         total_loss = cls_loss + alpha * mse_loss
         return total_loss
 
-    def __res_block(self, in_depth, x):
-        feature = K.layers.Conv2D(filters=in_depth, kernel_size=(3, 3),padding='same', activation=None)(x)
+    def __metric_angle(self, y_true, y_pred):
+        cont_true = y_true[:,1]
+
+        sm_pred = K.backend.softmax(y_pred, 1)
+        pred_cont = K.backend.sum(sm_pred * self.idx_tensor, 1) * 3 - 99
+
+        metric = K.backend.abs(cont_true - pred_cont)
+        metric = K.backend.mean(metric)
+
+        return metric
+
+    def __conv_bn_relu(self, in_depth, x):
+        feature = K.layers.Conv2D(filters=in_depth, kernel_size=(3, 3), padding='same', activation=None)(x)
         feature = K.layers.BatchNormalization()(feature)
         feature = K.layers.Activation('relu')(feature)
-        
-        shortcut = K.layers.Conv2D(filters=in_depth, kernel_size=(1, 1), activation=None)(x)
-        shortcut = K.layers.BatchNormalization()(shortcut)
-        shortcut = K.layers.Activation('relu')(shortcut)
-        feature = K.layers.add([shortcut, feature])
         return feature
 
     def __create_model(self):
         inputs = tf.keras.layers.Input(shape=(self.input_size, self.input_size, 3))
 
-        feature = K.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=2, padding='same', activation=K.activations.relu)(inputs)
+        feature = K.layers.Conv2D(filters=16, kernel_size=(7, 7), strides=2, padding='same', activation=K.activations.relu)(inputs)
+        feature = self.__conv_bn_relu(16, feature)
+        feature = self.__conv_bn_relu(16, feature)
         feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        feature = self.__res_block(64, feature)
+        feature = self.__conv_bn_relu(32, feature)
+        feature = self.__conv_bn_relu(32, feature)
         feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        feature = self.__res_block(128, feature)
+        feature = self.__conv_bn_relu(64, feature)
+        feature = self.__conv_bn_relu(64, feature)
         feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        feature = self.__res_block(256, feature)
+        feature = self.__conv_bn_relu(128, feature)
+        feature = self.__conv_bn_relu(128, feature)
         feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        feature = self.__res_block(512, feature)
-        feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
+        feature = self.__conv_bn_relu(256, feature)
+        feature = self.__conv_bn_relu(256, feature)
 
         # Original
         # feature = K.layers.Conv2D(filters=64, kernel_size=(11, 11), strides=4, padding='same', activation=K.activations.relu)(inputs)
@@ -81,14 +92,21 @@ class Model:
               train_dataset,
               val_dataset,
               max_epoches=20,
-              lr=1e-4,):
+              lr=1e-4):
+
         losses = {
             'yaw':self.__loss_angle,
             'pitch':self.__loss_angle,
             'roll':self.__loss_angle,
         }
+
+        metrics = {
+            'yaw': self.__metric_angle,
+            'pitch': self.__metric_angle,
+            'roll': self.__metric_angle,
+        }
         
-        self.model.compile(optimizer=K.optimizers.Adam(lr=lr), loss=losses)
+        self.model.compile(optimizer=K.optimizers.Adam(lr=lr), loss=losses, metrics=metrics)
         self.model.summary()
         self.model.fit(x=train_dataset.data_generator(),
                        validation_data=val_dataset.data_generator(),
@@ -97,6 +115,7 @@ class Model:
                        steps_per_epoch=train_dataset.epoch_steps,
                        validation_steps=val_dataset.epoch_steps,
                        verbose=1)
+
         self.model.save(model_path)
 
     def load(self, path):

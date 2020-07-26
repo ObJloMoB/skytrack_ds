@@ -9,7 +9,7 @@ from train import split
 
 def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
     pitch = pitch * np.pi / 180
-    yaw = -(yaw * np.pi / 180)
+    yaw = (yaw * np.pi / 180)
     roll = roll * np.pi / 180
 
     if tdx != None and tdy != None:
@@ -40,19 +40,16 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
 
 def main(opts):
     train_list, val_list = split(opts.data)
-    train_dataset = AFLW2000(train_list, batch_size=1, input_size=opts.size)
+    train_dataset = AFLW2000(val_list, batch_size=1, input_size=opts.size)
 
     max_show = 10
     for idx, (x, y) in enumerate(train_dataset.data_generator()):
-        print(idx, y)
-        print(len(y))
-
         img = x[0]*[0.25, 0.25, 0.25] + [0.5, 0.5, 0.5]
+        img = (img*255).astype(np.uint8)
         yaw, pitch, roll = y[0][0][1], y[1][0][1], y[2][0][1]
-        print(pitch, yaw, roll)
+        print(idx, yaw, pitch, roll)
         img = draw_axis(img, pitch, yaw, roll, tdx=opts.size/2, tdy=opts.size/2, size=100)
-        cv2.imshow('img', img)
-        cv2.waitKey(0)
+        cv2.imwrite(f'data/{idx}.jpg', img)
         if idx == max_show:
             break
 

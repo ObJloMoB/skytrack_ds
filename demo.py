@@ -14,6 +14,7 @@ def extend_crop(bbox, scale=2.0):
     new_w = new_h
     print(new_h, new_w)
     new_bbox = np.array([cy - new_h/2, cx - new_w/2, cy + new_h/2, cx + new_w/2], dtype=np.int32)
+    new_bbox = np.clip(new_bbox, 0, np.max(new_bbox))
     print(new_bbox)
 
     return new_bbox
@@ -70,11 +71,11 @@ def main(opts):
 
             top, left, bottom, right = extend_crop([top, right, bottom, left])
             crop = img[top:bottom, left:right]
-            cv2.imshow('new_crop', crop)
+            # cv2.imshow('new_crop', crop)
 
             crop = cv2.resize(crop, (224, 224))
-            cv2.imshow('resize', crop)
-            input_img = np.asarray(crop, dtype=np.float32)
+            # cv2.imshow('resize', crop)
+            input_img = np.asarray(crop, dtype=np.float32) / 255.0
             normed_img = (input_img - [0.5, 0.5, 0.5]) / [0.25, 0.25, 0.25]
             normed_img = np.expand_dims(normed_img, 0)
             res = model.test_online(normed_img)
@@ -85,9 +86,9 @@ def main(opts):
 
             cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
 
-        cv2.imshow('img', img)
-        if cv2.waitKey(1) == 27:
-            break
+        # cv2.imshow('img', img)
+        # if cv2.waitKey(1) == 27:
+        #     break
 
 
 if __name__ == '__main__':

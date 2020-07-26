@@ -21,7 +21,6 @@ def split(data_dir, val_split=0.2):
 
 def main(opts):
     model = Model(66, opts.size)
-    model.model.summary()
 
     train_list, val_list = split(opts.data)
 
