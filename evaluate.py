@@ -4,6 +4,7 @@ import face_recognition
 import numpy as np
 from lib.model import Model
 from math import cos, sin
+from time import time
 
 from lib.dataset import AFLW2000
 from train import split
@@ -12,41 +13,27 @@ from demo import draw_axis
 
 def main(opts):
     model = Model(66, opts.size)
-    model.load(opts.weights)
+    model.model.summary()
+    # model.load(opts.weights)
 
     train_list, val_list = split(opts.data)
     val_dataset = AFLW2000(val_list, batch_size=1, input_size=opts.size)
 
-    yaw_err, pitch_err, roll_err = [], [], []
+    err, times = [], []
     for idx, (x, y) in enumerate(val_dataset.data_generator()):
         print(f'{idx}/{val_dataset.epoch_steps}')
 
+        t1 = time()
         res = model.test_online(x)
-        yaw, pitch, roll = y[0][0][1], y[1][0][1], y[2][0][1]
-        # print(yaw, pitch, roll)
-        # print(res)
-        yaw_err.append(abs(yaw-res[0]))
-        pitch_err.append(abs(pitch-res[1]))
-        roll_err.append(abs(roll-res[2]))
+        times.append(time()-t1)
+        ypr = np.array(y)[:, 0, 1]
+        err.append(abs(ypr-res))
 
-        # img = x[0]*[0.25, 0.25, 0.25] + [0.5, 0.5, 0.5]
-        # img = draw_axis(img, pitch, yaw, roll, tdx=opts.size*0.25, tdy=opts.size*0.25, size=100)
-        # img = draw_axis(img, *res, tdx=opts.size*0.75, tdy=opts.size*0.75, size=100)
-
-        # cv2.imshow('img', img)
-        # cv2.waitKey(0)
-
-        # print(f'YAW: {np.mean(yaw_err)}')
-        # print(f'PITCH: {np.mean(pitch_err)}')
-        # print(f'ROLL: {np.mean(roll_err)}')
-
+        print(f'YPR: {np.mean(np.array(err), axis=0)}')
+        print(f'TIME: {np.mean(times)}')
         if idx == val_dataset.epoch_steps:
             break
 
-    print('##########################')
-    print(f'YAW: {np.mean(yaw_err)}')
-    print(f'PITCH: {np.mean(pitch_err)}')
-    print(f'ROLL: {np.mean(roll_err)}')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
