@@ -22,4 +22,5 @@ env/
 *.png
 
 ## Custom
+logs/
 

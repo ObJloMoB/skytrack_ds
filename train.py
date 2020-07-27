@@ -22,6 +22,10 @@ def split(data_dir, val_split=0.2):
 def main(opts):
     model = Model(66, opts.size)
 
+    if opts.pretrain is not None:
+        print(f'Initial weights from {opts.pretrain}')
+        model.load(opts.pretrain)
+
     train_list, val_list = split(opts.data)
 
     train_dataset = AFLW2000(train_list, augment=True, batch_size=opts.bs, input_size=opts.size)
@@ -43,8 +47,8 @@ if __name__ == '__main__':
                         default=30, type=int)
     parser.add_argument('--bs', help='BS',
                         default=64, type=int)
-    parser.add_argument('--output', help='Save every N epoch',
-                        default='.', type=str)
+    parser.add_argument('--pretrain', help='load weights',
+                        default=None)
 
     args = parser.parse_args()
     main(args)

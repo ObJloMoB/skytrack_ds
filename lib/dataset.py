@@ -64,7 +64,6 @@ class AFLW2000:
         
         crop_img = img[int(y_min):int(y_max), int(x_min):int(x_max)]
 
-
         # We get the pose in radians
         pose = self.__get_ypr_from_mat(file_name.replace('jpg', 'mat'))
         
@@ -96,22 +95,6 @@ class AFLW2000:
         normed_img = (crop_img - self.norm_params['mean']) / self.norm_params['std']
 
         return normed_img, bin_labels, cont_labels
-
-    def __get_input_label(self, file_name):
-        # We get the pose in radians
-        pose = self.__get_ypr_from_mat(file_name)
-        
-        # And convert to degrees.
-        pitch = pose[0] * 180.0 / np.pi
-        yaw = pose[1] * 180.0 / np.pi
-        roll = pose[2] * 180.0 / np.pi
-        
-        cont_labels = [yaw, pitch, roll]
-        
-        bins = np.array(range(-99, 99, 3))
-        bin_labels = np.digitize([yaw, pitch, roll], bins) - 1
-
-        return bin_labels, cont_labels
         
     def data_generator(self, shuffle=True):
         file_num = len(self.data_list)
