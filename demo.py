@@ -81,14 +81,14 @@ def main(opts):
             res = model.test_online(normed_img)
             print(res)
 
-            img = draw_axis(img, *res, tdx=left, tdy=top, size=100)
+            img = draw_axis(img, *res, tdx=(left+right)/2, tdy=(top+bottom)/2, size=100)
 
 
             cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
 
-        # cv2.imshow('img', img)
-        # if cv2.waitKey(1) == 27:
-        #     break
+        cv2.imshow('img', img)
+        if cv2.waitKey(1) == 27:
+            break
 
 
 if __name__ == '__main__':
