@@ -13,6 +13,8 @@ pip3 install -r requirements.txt
 python3 demo.py --input /dev/video0
 ```
 
+![Гиф работы](https://github.com/ObJloMoB/skytrack_ds/blob/master/data/res.gif)
+
 ## Задание 2
 
 
