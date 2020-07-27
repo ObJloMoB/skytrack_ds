@@ -15,7 +15,7 @@ def resize_center_crop(image, size):
     w, h = res.shape[:2]
     cw, ch = int(w/2), int(h/2)
     crop = res[int(cw-size/2):int(cw+size/2), int(ch-size/2):int(ch+size/2)]
-    
+
     return crop
 
 
@@ -68,33 +68,41 @@ def main(opts):
 
     while True:
         _, img = cap.read()
+
+        # Предикт лица (по дефолту тут HOG)
         inp_img = img[:, :, ::-1]
         face_locations = face_recognition.face_locations(inp_img)
 
         for (top, right, bottom, left) in face_locations:
+            # Расширяем ббокс и смещаем вертикально
             bbox_width = abs(bottom - top)
             bbox_height = abs(right - left)
             left -= int(2 * bbox_width / 4)
             right += int(2 * bbox_width / 4)
             top -= int(3 * bbox_height / 4)
             bottom += int(bbox_height / 4)
+
+            # Выход за пределы
             top = max(top, 0)
             left = max(left, 0)
             bottom = min(img.shape[0], bottom)
             right = min(img.shape[1], right)
 
             crop = img[top:bottom, left:right]
+
+            # Ресайз по меньшей стороне и кроп от центра
             crop = resize_center_crop(crop, opts.size)
+
+            # Нормализация
             normed_img = normalize(crop)
             imgs = []
             imgs.append(normed_img)
 
+            # Предикт
             res = model.test_online(imgs)
-            print(res)
-
+            
+            # Отрисовка
             img = draw_axis(img, *res, tdx=(left+right)/2, tdy=(top+bottom)/2, size=100)
-
-
             cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 1)
 
         out.write(img)
