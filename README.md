@@ -1,6 +1,8 @@
 # Тестовое
 
 ## Задание 1
+Все взято со статьи [Fine-Grained Head Pose Estimation Without Keypoints](https://arxiv.org/abs/1710.00925), у которой есть открытая [реализация](https://github.com/natanielruiz/deep-head-pose)
+
 Тестировалось под:
 - Ubuntu 18.04
 - Cuda 10.0
@@ -12,7 +14,7 @@
 pip3 install -r requirements.txt
 python3 demo.py --input /dev/video0
 ```
-
+Результаты обучения на датасете 300W-LP (претрейн на ALWF2k)
 ![Гиф работы](https://github.com/ObJloMoB/skytrack_ds/blob/master/data/res.gif)
 
 ## Задание 2
