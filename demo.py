@@ -6,24 +6,29 @@ from lib.model import Model
 from math import cos, sin
 
 
-def extend_crop(bbox, scale=2.0):
-    cy, cx = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
-    new_h, new_w = (bbox[2] - bbox[0])*scale, (bbox[1] - bbox[3])*scale
-    print(new_h, new_w)
-    new_h = min([new_h, new_w])
-    new_w = new_h
-    print(new_h, new_w)
-    new_bbox = np.array([cy - new_h/2, cx - new_w/2, cy + new_h/2, cx + new_w/2], dtype=np.int32)
-    new_bbox = np.clip(new_bbox, 0, np.max(new_bbox))
-    print(new_bbox)
+def resize_center_crop(image, size):
+    w, h = image.shape[:2]
+    if w > h:
+        res = cv2.resize(image, (224, int(w/h*224)))
+    else:
+        res = cv2.resize(image, (int(h/w*224), 224))
+    w, h = res.shape[:2]
+    cw, ch = int(w/2), int(h/2)
+    crop = res[int(cw-size/2):int(cw+size/2), int(ch-size/2):int(ch+size/2)]
+    
+    return crop
 
-    return new_bbox
 
+def normalize(image):
+    input_img = np.asarray(image, dtype=np.float32) / 255.0
+    normed_img = (input_img - np.array([0.5, 0.5, 0.5])) / np.array([0.25, 0.25, 0.25])
+    return normed_img
+    
 
 def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
     pitch = pitch * np.pi / 180
     yaw = -(yaw * np.pi / 180)
-    roll = roll * np.pi / 180
+    roll = -1*roll * np.pi / 180
 
     if tdx != None and tdy != None:
         tdx = tdx
@@ -53,42 +58,50 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 100):
 
 
 def main(opts):
-    # replace with imutils
     cap = cv2.VideoCapture(opts.input)
 
     model = Model(66, opts.size)
     model.load(opts.weights)
 
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('data/res.mp4', fourcc, 10, (640, 480))
+
     while True:
         _, img = cap.read()
-
         inp_img = img[:, :, ::-1]
         face_locations = face_recognition.face_locations(inp_img)
 
         for (top, right, bottom, left) in face_locations:
-            # crop = img[top:bottom, left:right]
-            # cv2.imshow('crop', crop)
+            bbox_width = abs(bottom - top)
+            bbox_height = abs(right - left)
+            left -= int(2 * bbox_width / 4)
+            right += int(2 * bbox_width / 4)
+            top -= int(3 * bbox_height / 4)
+            bottom += int(bbox_height / 4)
+            top = max(top, 0)
+            left = max(left, 0)
+            bottom = min(img.shape[0], bottom)
+            right = min(img.shape[1], right)
 
-            top, left, bottom, right = extend_crop([top, right, bottom, left])
             crop = img[top:bottom, left:right]
-            # cv2.imshow('new_crop', crop)
+            crop = resize_center_crop(crop, opts.size)
+            normed_img = normalize(crop)
+            imgs = []
+            imgs.append(normed_img)
 
-            crop = cv2.resize(crop, (224, 224))
-            # cv2.imshow('resize', crop)
-            input_img = np.asarray(crop, dtype=np.float32) / 255.0
-            normed_img = (input_img - [0.5, 0.5, 0.5]) / [0.25, 0.25, 0.25]
-            normed_img = np.expand_dims(normed_img, 0)
-            res = model.test_online(normed_img)
+            res = model.test_online(imgs)
             print(res)
 
             img = draw_axis(img, *res, tdx=(left+right)/2, tdy=(top+bottom)/2, size=100)
 
 
-            cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
+            cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 1)
 
+        out.write(img)
         cv2.imshow('img', img)
         if cv2.waitKey(1) == 27:
             break
+    out.release()
 
 
 if __name__ == '__main__':
@@ -96,10 +109,9 @@ if __name__ == '__main__':
     parser.add_argument('--input', help='input resiurce',
                         required=True, type=str)
     parser.add_argument('--weights', help='chkpt',
-                        default='model_size224_e30_lr1.0E-05.h5', type=str)
+                        default='data/headR_model_size224_e50_lr1.0E-05', type=str)
     parser.add_argument('--size', help='Input image size',
                         default=224, type=int)
-
 
     args = parser.parse_args()
     main(args)

@@ -15,6 +15,7 @@ class Model:
         self.model = self.__create_model()
         
     def __loss_angle(self, y_true, y_pred, alpha=2.0):
+        # Лосс смело позаимствованный из статьи, где ребята написали что просто мсе не робит        
         # cross entropy loss
         bin_true = y_true[:,0]
         cont_true = y_true[:,1]
@@ -31,6 +32,7 @@ class Model:
         return total_loss
 
     def __metric_angle(self, y_true, y_pred):
+        # MAE для процесса обучения
         cont_true = y_true[:,1]
 
         sm_pred = K.backend.softmax(y_pred, 1)
@@ -48,23 +50,8 @@ class Model:
         return feature
 
     def __create_model(self):
-        inputs = tf.keras.layers.Input(shape=(self.input_size, self.input_size, 3))
-
-        # feature = K.layers.Conv2D(filters=16, kernel_size=(7, 7), strides=2, padding='same', activation=K.activations.relu)(inputs)
-        # feature = self.__conv_bn_relu(16, feature)
-        # feature = self.__conv_bn_relu(16, feature)
-        # feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        # feature = self.__conv_bn_relu(32, feature)
-        # feature = self.__conv_bn_relu(32, feature)
-        # feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        # feature = self.__conv_bn_relu(64, feature)
-        # feature = self.__conv_bn_relu(64, feature)
-        # feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        # feature = self.__conv_bn_relu(128, feature)
-        # feature = self.__conv_bn_relu(128, feature)
-        # feature = K.layers.MaxPool2D(pool_size=(2, 2), strides=2)(feature)
-        # feature = self.__conv_bn_relu(256, feature)
-        # feature = self.__conv_bn_relu(256, feature)
+        # Около алекснет все из той же статьи, для бейзлайна сойдет
+        inputs = K.layers.Input(shape=(self.input_size, self.input_size, 3))
 
         feature = K.layers.Conv2D(filters=64, kernel_size=(11, 11), strides=4, padding='same', activation=K.activations.relu)(inputs)
         feature = K.layers.MaxPool2D(pool_size=(3, 3), strides=2)(feature)
@@ -109,10 +96,13 @@ class Model:
         self.model.compile(optimizer=K.optimizers.Adam(lr=lr), loss=losses, metrics=metrics)
         self.model.summary()
 
+        # Тензорборд для графиков и чекпоинты для спокойствия
         logdir = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
         tb = K.callbacks.TensorBoard(log_dir=logdir)
         mc = K.callbacks.ModelCheckpoint(os.path.join(logdir, 'weights{epoch:08d}.h5'), 
                                          save_weights_only=True, period=10)
+        
+        # Само обучение
         self.model.fit(x=train_dataset.data_generator(),
                        validation_data=val_dataset.data_generator(),
                        epochs=max_epoches,

@@ -14,7 +14,7 @@ from demo import draw_axis
 def main(opts):
     model = Model(66, opts.size)
     model.model.summary()
-    # model.load(opts.weights)
+    model.load(opts.weights)
 
     train_list, val_list = split(opts.data)
     val_dataset = AFLW2000(val_list, batch_size=1, input_size=opts.size)

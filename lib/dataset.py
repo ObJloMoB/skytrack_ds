@@ -29,10 +29,11 @@ class AFLW2000:
     # END REWORK 
     
     def __get_input_data(self, file_name):
+        # Не перевожу в РГБ тк особого смысла нет, тк предобучение из бибилиотек не беру
         img = cv2.imread(file_name)
         pt2d = self.__get_pt2d_from_mat(file_name.replace('jpg', 'mat'))
         
-        # Crop the face loosely
+        # Просто кроп
         x_min = min(pt2d[0, :])
         y_min = min(pt2d[1, :])
         x_max = max(pt2d[0, :])
@@ -49,6 +50,7 @@ class AFLW2000:
         y_min = center_y - Lmax // 2
         y_max = center_y + Lmax // 2
         
+        # Не выходить за границы картинок
         if x_min < 0:
             y_max -= abs(x_min)
             x_min = 0
@@ -64,14 +66,13 @@ class AFLW2000:
         
         crop_img = img[int(y_min):int(y_max), int(x_min):int(x_max)]
 
-        # We get the pose in radians
+        # Загружаем углы
         pose = self.__get_ypr_from_mat(file_name.replace('jpg', 'mat'))
-        
-        # And convert to degrees.
         pitch = pose[0] * 180.0 / np.pi
         yaw = pose[1] * 180.0 / np.pi
         roll = pose[2] * 180.0 / np.pi
         
+        # Аугментация, включено только на трейне
         if self.augment:
             # Flip?
             rnd = np.random.random_sample()
@@ -87,10 +88,11 @@ class AFLW2000:
                 crop_img = cv2.filter2D(crop_img,-1,kernel)
         
         cont_labels = [yaw, pitch, roll]
-        
+        # Нужно для комбинации кросс энтропии и мсе
         bins = np.array(range(-99, 99, 3))
         bin_labels = np.digitize([yaw, pitch, roll], bins) - 1
 
+        # Нормализация
         crop_img = np.asarray(cv2.resize(crop_img, (self.input_size, self.input_size))) / 255.0
         normed_img = (crop_img - self.norm_params['mean']) / self.norm_params['std']
 
@@ -102,8 +104,6 @@ class AFLW2000:
         while True:
             if shuffle:
                 np.random.shuffle(self.data_list)
-                # idx = np.random.permutation(range(file_num))
-                # self.data_list = np.array(self.data_list)[idx]
             max_num = file_num - (file_num % self.batch_size)
             for i in range(0, max_num, self.batch_size):
                 batch_x = []

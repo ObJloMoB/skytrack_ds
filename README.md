@@ -1,7 +1,17 @@
 # Тестовое
 
 ## Задание 1
+Тестировалось под:
+- Ubuntu 18.04
+- Cuda 10.0
+- Python 3.6
 
+[Ссылка](https://drive.google.com/file/d/13Uy1IlB_XSg6MYdT-83vZaed-pCfEPxo/view?usp=sharing) на веса. Их положить в папку `data`.
+
+```sh
+pip3 install -r requirements.txt
+python3 demo.py --input /dev/video0
+```
 
 ## Задание 2
 
